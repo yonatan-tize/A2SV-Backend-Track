@@ -46,17 +46,13 @@ func Login(c *gin.Context){
 
 func PromoteUser(c *gin.Context){
 	userId := c.Param("id") 
-	var user models.User 
-	if err:= c.ShouldBindJSON(&user); err != nil{
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return 
-	}
+	
 	objID, err := primitive.ObjectIDFromHex(userId)
 	if err != nil{ // If the ID is not a valid ObjectID, return a 400 Bad Request
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid ID format"})
 		return
 	}
-	err = data.UpdateUserRoll(objID.Hex())
+	err = data.UpdateUserRoll(objID)
 
 	if err != nil{
 		if err == mongo.ErrNoDocuments{
