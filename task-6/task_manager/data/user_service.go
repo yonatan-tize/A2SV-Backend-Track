@@ -9,15 +9,12 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	// "github.com/golang-jwt/jwt"
+	"golang.org/x/crypto/bcrypt"
 	"github.com/dgrijalva/jwt-go"
-	// "github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
-	// "go.mongodb.org/mongo-driver/mongo/primitive"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var client *mongo.Client
@@ -45,8 +42,8 @@ func init(){
 		log.Fatal("database not connected")
 	}
 	fmt.Println("connected to database")
-	userCollection = client.Database("user_registration").Collection("users")
-	taskCollection = client.Database("taskManager").Collection("tasks")
+	userCollection = client.Database("User_registration").Collection("users")
+	taskCollection = client.Database("TaskManagers").Collection("tasks")
 
 }
 
@@ -65,7 +62,7 @@ func verifyPassword(userPassword string, foundPassword string)bool{
 	return err == nil
 }
 
-func generateAllTokens(user *models.User)(string, error){
+func generateAllTokens(user models.User)(string, error){
 	expirationTime := time.Now().Add(24 * time.Hour) // Token valid for 24 hours
 
 	claims := &Claims{
@@ -110,6 +107,7 @@ func CreateAccount(user models.User) (models.User, error){
 	if user.Role == "" {
 		user.Role = "USER"
 	}
+	user.ID = primitive.NewObjectID()
 
 	// Set timestamps
 	user.CreatedAt = time.Now()
@@ -119,27 +117,25 @@ func CreateAccount(user models.User) (models.User, error){
 	return user, err
 }
 
-func AuthenticateUser(userName string, password string)(models.User, error){
+func AuthenticateUser(userName string, password string)(models.User, string, error){
 	//find the user name
-	foundUser := &models.User{}
-	err := userCollection.FindOne(context.Background(), bson.M{"username": userName}).Decode(foundUser)
+	var	foundUser models.User 
+	err := userCollection.FindOne(context.Background(), bson.M{"username": userName}).Decode(&foundUser)
 	if err != nil{
-		return models.User{}, err
+		return models.User{}, "", err
 	}
 
 	// check if the password is the same
 	isValidPassword := verifyPassword(password, foundUser.Password)
 	if !isValidPassword{
-		return models.User{}, errors.New("incorrect password")
+		return models.User{}, "", errors.New("incorrect password")
 	}
 	token, err := generateAllTokens(foundUser)
 	if err != nil{
-		return models.User{}, err
+		return models.User{}, "", err
 	}
 
-	foundUser.Token = token
-	
-	return *foundUser, nil
+	return foundUser, token, nil
 }
 
 

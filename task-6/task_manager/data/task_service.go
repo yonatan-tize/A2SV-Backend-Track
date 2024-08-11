@@ -69,22 +69,14 @@ func GetTaskByID(id primitive.ObjectID) (*models.Task, error){
 // The new task is then returned along with a nil error if the insertion is successful.
 // If there is an error during the insertion, nil is returned for the task and the error is returned.
 func AddNewTask(task models.Task) (*models.Task, error) {
+
+	task.ID = primitive.NewObjectID()
     // Insert the task into the collection
-    result, err := taskCollection.InsertOne(context.TODO(), task)
+    _, err := taskCollection.InsertOne(context.TODO(), task)
     if err != nil {
         return nil, err
-    }
-    // Get the inserted ID directly as a primitive.ObjectID
-    insertedID := result.InsertedID.(primitive.ObjectID)
-    // Create a new task with the inserted ID
-    insertedTask := models.Task{
-        ID:          insertedID,
-        Title:       task.Title,
-        Description: task.Description,
-        DueDate:     task.DueDate,
-        Status:      task.Status,
-    }
-    return &insertedTask, nil
+	}
+    return &task, nil
 }
 
 

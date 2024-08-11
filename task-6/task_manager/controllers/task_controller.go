@@ -36,12 +36,11 @@ func Login(c *gin.Context){
 		return
 	}
 
-	user, err := data.AuthenticateUser(user.Username, user.Password)
+	user, token,  err := data.AuthenticateUser(user.Username, user.Password)
 	if err != nil{
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err})
 	}
-
-	c.JSON(http.StatusAccepted, user)
+	c.JSON(http.StatusAccepted, gin.H{"token": token, "user": user})
 }
 
 
