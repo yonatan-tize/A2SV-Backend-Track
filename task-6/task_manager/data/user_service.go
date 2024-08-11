@@ -20,7 +20,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var userClient *mongo.Client
+var client *mongo.Client
 var userCollection *mongo.Collection
 var SECRET_KEY = []byte("MY-Secret-Key")
 
@@ -35,17 +35,19 @@ func init(){
 	var err error
 	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
 
-	userClient, err = mongo.Connect(context.TODO(), clientOptions)
+	client, err = mongo.Connect(context.TODO(), clientOptions)
 	if err != nil{
 		log.Fatal(err)
 	}
 
-	err = userClient.Ping(context.TODO(), nil)
+	err = client.Ping(context.TODO(), nil)
 	if err != nil{
 		log.Fatal("database not connected")
 	}
 	fmt.Println("connected to database")
-	userCollection = userClient.Database("user_registration").Collection("users")
+	userCollection = client.Database("user_registration").Collection("users")
+	taskCollection = client.Database("taskManager").Collection("tasks")
+
 }
 
 var validate = validator.New() 
@@ -140,3 +142,24 @@ func AuthenticateUser(userName string, password string)(models.User, error){
 	return *foundUser, nil
 }
 
+
+func UpdateUserRoll(id string)error{
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+    defer cancel()
+
+	filter := bson.M{"id": id}
+	update := bson.M{
+        "$set": bson.M{
+            "role": "ADMIN",
+        },
+    }
+	result, err := userCollection.UpdateOne(ctx, filter, update)
+	if err != nil {
+        return err
+    }
+
+    if result.MatchedCount == 0 {
+        return mongo.ErrNoDocuments // No user found with the given ID
+    }
+	return nil
+}

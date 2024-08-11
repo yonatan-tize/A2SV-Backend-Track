@@ -45,6 +45,35 @@ func Login(c *gin.Context){
 }
 
 
+func PromoteUser(c *gin.Context){
+	userId := c.Param("id") 
+	var user models.User 
+	if err:= c.ShouldBindJSON(&user); err != nil{
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return 
+	}
+	objID, err := primitive.ObjectIDFromHex(userId)
+	if err != nil{ // If the ID is not a valid ObjectID, return a 400 Bad Request
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid ID format"})
+		return
+	}
+	err = data.UpdateUserRoll(objID.Hex())
+
+	if err != nil{
+		if err == mongo.ErrNoDocuments{
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return 
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return 
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "promoted to admin"})
+
+}
+
+
+
+
 
 // GetTasks retrieves all tasks from the data source.
 // It returns a JSON response containing the tasks on success,
