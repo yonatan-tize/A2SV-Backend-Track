@@ -6,17 +6,29 @@ import(
 	"task_manager/middleware"
 )
 
-func SetUpRouter(router *gin.Engine){
+func SetUpRouter(router *gin.Engine) {
+	// Public routes
+	public := router.Group("/")
+	{
+		public.POST("/register", controllers.CreateAccount)
+		public.POST("/login", controllers.Login)
+	}
 
-	router.POST("/register", controllers.CreateAccount)
-	router.POST("/login", controllers.Login)
+	// Authenticated routes
+	authorized := router.Group("/")
+	authorized.Use(middleware.AuthMiddleware())
+	{
+		authorized.GET("/tasks", controllers.GetTasks)
+		authorized.GET("/tasks/:id", controllers.GetTask)
+	}
 
-	router.GET("/tasks", middleware.AuthMiddleware(), controllers.GetTasks)
-	router.GET("/tasks/:id", middleware.AuthMiddleware(),  controllers.GetTask)
-
-	router.PUT("/admin/promote/:id", middleware.AuthMiddleware(), middleware.AuthAdminMiddleware(), controllers.PromoteUser)
-	router.POST("/admin/tasks", middleware.AuthMiddleware(), middleware.AuthAdminMiddleware(), controllers.CreateTask)
-	router.PUT("/admin/tasks/:id", middleware.AuthMiddleware(), middleware.AuthAdminMiddleware(), controllers.UpdateTask)
-	router.DELETE("/admin/tasks/:id", middleware.AuthMiddleware(), middleware.AuthAdminMiddleware(), controllers.DeleteTask)
-	
+	// Admin routes (require admin privileges)
+	admin := router.Group("/admin")
+	admin.Use(middleware.AuthMiddleware(), middleware.AuthAdminMiddleware())
+	{
+		admin.PUT("/promote/:id", controllers.PromoteUser)
+		admin.POST("/tasks", controllers.CreateTask)
+		admin.PUT("/tasks/:id", controllers.UpdateTask)
+		admin.DELETE("/tasks/:id", controllers.DeleteTask)
+	}
 }

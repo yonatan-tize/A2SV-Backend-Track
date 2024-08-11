@@ -28,6 +28,10 @@ type Claims struct {
     jwt.StandardClaims
 }
 
+// init initializes the MongoDB client and establishes a connection to the database.
+// It sets up the necessary client options and connects to the MongoDB server running on localhost:27017.
+// If the connection is successful, it prints a message indicating that it is connected to the database.
+// It also sets the userCollection and taskCollection variables to reference the respective collections in the database.
 func init() {
 	var err error
 	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
@@ -49,6 +53,7 @@ func init() {
 
 var validate = validator.New()
 
+// hashPassword hashes the plain password to human unreadable format
 func hashPassword(password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -57,11 +62,17 @@ func hashPassword(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
+//checks the users password with the one in the database
 func verifyPassword(userPassword string, foundPassword string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(foundPassword), []byte(userPassword))
 	return err == nil
 }
 
+// generateTokens generates a JWT token for the given user.
+// It takes a user model as input and returns the generated token string and an error, if any.
+// The token is valid for 24 hours.
+// The token contains the user's ID, username, role, and expiration time.
+// It uses the HS256 signing method and signs the token with the SECRET_KEY.
 func generateTokens(user models.User) (string, error) {
 	expirationTime := time.Now().Add(24 * time.Hour) // Token valid for 24 hours
 
@@ -83,6 +94,19 @@ func generateTokens(user models.User) (string, error) {
 	return tokenString, nil
 }
 
+
+// CreateAccount creates a new user account in the system.
+// It takes a user model as input and returns the created user model and an error, if any.
+// The function performs the following steps:
+// 1. Validates if the input user is compatible with the user model struct.
+// 2. Checks if the user already exists in the database by querying the username.
+// 3. Hashes the user's password for security.
+// 4. If there are no existing users in the database, the first user is promoted to an admin role.
+// 5. If the user's role is not specified, it is set to "USER" by default.
+// 6. Generates a new unique ID for the user.
+// 7. Sets the created and updated timestamps for the user.
+// 8. Inserts the user into the database.
+// The function returns the created user model and any error that occurred during the process.
 func CreateAccount(user models.User) (models.User, error) {
 	//validate if the input is compatible with the struct
 	err := validate.Struct(user)
@@ -109,9 +133,7 @@ func CreateAccount(user models.User) (models.User, error) {
 	if count == 0 {
 		// Promote the first user to admin
 		user.Role = "ADMIN"
-	}
-
-	if user.Role == "" {
+	}else {
 		user.Role = "USER"
 	}
 
@@ -125,6 +147,10 @@ func CreateAccount(user models.User) (models.User, error) {
 	return user, err
 }
 
+// AuthenticateUser authenticates a user by their username and password.
+// It searches for the user with the given username in the user collection and verifies the password.
+// If the username or password is incorrect, it returns an empty user model, an empty token, and an error.
+// If the authentication is successful, it returns the authenticated user model, a token, and no error.
 func AuthenticateUser(userName string, password string) (models.User, string, error) {
 	//find the user name
 	var foundUser models.User
@@ -146,6 +172,9 @@ func AuthenticateUser(userName string, password string) (models.User, string, er
 	return foundUser, token, nil
 }
 
+// UpdateUserRoll updates the role of a user with the given ID to "ADMIN".
+// It takes the ID of the user as a parameter and returns an error if any occurred.
+// If no user is found with the given ID, it returns mongo.ErrNoDocuments.
 func UpdateUserRoll(id primitive.ObjectID) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()

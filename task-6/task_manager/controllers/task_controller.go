@@ -10,7 +10,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// you have to handle and assign token for user
+// CreateAccount creates a new user account.
+//
+// This function receives a JSON payload containing the user information and binds it to the newUser variable.
+// If the binding fails, it returns a JSON response with a bad request error.
+// Otherwise, it calls the CreateAccount function from the data package to create the user account.
+// If an error occurs during the account creation, it returns a JSON response with the error message.
+// Finally, it returns a JSON response with the created user account if the account creation is successful.
 func CreateAccount(c *gin.Context){
 
 	var newUser models.User
@@ -18,7 +24,6 @@ func CreateAccount(c *gin.Context){
 		c.JSON(http.StatusBadRequest, gin.H{"error" : err.Error()})
 		return 
 	}
-
 	user, err := data.CreateAccount(newUser)
 	if err != nil{
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -27,6 +32,12 @@ func CreateAccount(c *gin.Context){
 	c.JSON(http.StatusOK, user)
 }
 
+// Login handles the login functionality for the task manager.
+// It expects a JSON payload containing the username and password.
+// If the payload is valid, it authenticates the user and returns a token and user information.
+// If the authentication fails, it returns an error message.
+// The token and user information are returned in a JSON response with status code 202 (Accepted).
+// If there is an error in binding the JSON payload, it returns an error message with status code 400 (Bad Request).
 func Login(c *gin.Context){
 	// by using username and password
 	var user models.User
@@ -43,17 +54,23 @@ func Login(c *gin.Context){
 	c.JSON(http.StatusAccepted, gin.H{"token": token, "user": user})
 }
 
-
+// PromoteUser promotes a user to an admin role.
+// It takes a gin.Context as a parameter and retrieves the user ID from the request parameters.
+// If the ID is not a valid ObjectID, it returns a 400 Bad Request response.
+// It then calls the UpdateUserRoll function to update the user's role to admin.
+// If the user is not found, it returns a 404 Not Found response.
+// If there is any other error during the update process, it returns a 400 Bad Request response.
+// Finally, it returns a 200 OK response with a message indicating that the user has been promoted to admin.
 func PromoteUser(c *gin.Context){
 	userId := c.Param("id") 
-	
+
 	objID, err := primitive.ObjectIDFromHex(userId)
 	if err != nil{ // If the ID is not a valid ObjectID, return a 400 Bad Request
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Invalid ID format"})
 		return
 	}
+	
 	err = data.UpdateUserRoll(objID)
-
 	if err != nil{
 		if err == mongo.ErrNoDocuments{
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -63,11 +80,7 @@ func PromoteUser(c *gin.Context){
 		return 
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "promoted to admin"})
-
 }
-
-
-
 
 
 // GetTasks retrieves all tasks from the data source.

@@ -2,7 +2,11 @@
 
 ## Overview
 
-The Task Manager project is a simple task management system built with Go. It allows users to create, read, update, and delete tasks. The project uses the Gin framework for the web server and the official MongoDB driver for database interactions.
+The Task Manager project is a straightforward task management system developed using Go. It enables users to create, read, update, and delete tasks. The project is built with the Gin framework for the web server and leverages the official MongoDB driver for database operations.
+
+Upon registration, the first user is automatically assigned an Admin role, while subsequent users are given a standard User role. Admins have the ability to promote other users to the Admin role.
+
+The system includes authentication and authorization features, ensuring that users must be logged in to perform any actions. Depending on their role, users are granted different levels of access. Admins can create, update, and delete tasks, as well as retrieve all tasks or view a specific task by its ID. Regular users, however, are restricted to viewing all tasks or retrieving a specific task by its ID.
 
 ## Setup Instructions
 
@@ -39,7 +43,7 @@ The Task Manager project is a simple task management system built with Go. It al
 
 You can refer to the detailed API documentation using the link below:
 
-[Postman API Documentation](https://documenter.getpostman.com/view/37171778/2sA3s1orgE)
+[Postman API Documentation](https://documenter.getpostman.com/view/37171778/2sA3s3JC8E)
 
 ### Endpoints
 
